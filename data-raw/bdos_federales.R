@@ -126,7 +126,8 @@ pr18 <- bd_pr_18   %>%
 colnames(pr18)
 
 pr18 <- pr18 %>%
-  rename(noreg = num_votos_can_nreg,
+  rename(estado = id_estado,
+         noreg = num_votos_can_nreg,
          distritof = id_distrito,
          nombre_distritof = cabecera_distrital,
          panal =  na,
@@ -152,7 +153,7 @@ pr18 <- pr18 %>%
          seccion = if_else(casilla == "P","9999",seccion),
          municipio = formatC(municipio, width = 3, flag = "0"),
          distritof = formatC(distritof, width = 3, flag = "0"),
-         id_estado = formatC(id_estado, width = 2, flag = "0"))
+         estado = formatC(estado, width = 2, flag = "0"))
 
 
 pr18 <- pr18 %>%
@@ -211,7 +212,8 @@ df18 <- bd_df_18   %>%
 colnames(df18)
 
 df18 <- df18 %>%
-  rename(noreg = num_votos_can_nreg,
+  rename(estado = id_estado,
+         noreg = num_votos_can_nreg,
          distritof = id_distrito,
          nombre_distritof = cabecera_distrital,
          panal =  na,
@@ -236,7 +238,7 @@ df18 <- df18 %>%
          seccion = if_else(casilla == "P","9999",seccion),
          municipio = formatC(municipio, width = 3, flag = "0"),
          distritof = formatC(distritof, width = 3, flag = "0"),
-         id_estado = formatC(id_estado, width = 2, flag = "0"))
+         estado = formatC(estado, width = 2, flag = "0"))
 
 
 df18 <- df18 %>%
@@ -258,7 +260,7 @@ final_df18 <- final_df18%>%
                                 nchar(casilla) == 6 ~ gsub(pattern = "C","",casilla),
                                 nchar(casilla) == 5 ~ paste0("S",substr(casilla,4,5),"00")),
          tipo_casilla = substr(casilla,1,1),
-         clave_casilla = paste0(id_estado,seccion,id_casilla))
+         clave_casilla = paste0(estado,seccion,id_casilla))
 
 # se va voto en el extranjero volver a poner cuando se pueda
 
