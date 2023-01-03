@@ -172,7 +172,7 @@ crear_mapa_electoral <- function(bd,
 #' @param bd base de datos con resultados electorales
 #' @param eleccion elección o vector de elecciones de la cual se van a obtener los ganadores
 #' @param grupo nivel de observación de la gráfica (secciones, municipios, distritos)
-#' @import dplyr purrr ggplot2 tidytable
+#' @import dplyr purrr ggplot2
 #' @return Se obtiene una gráfica con el comparativo de las cantidades de secciones ganadas por cada uno de los partidos en cada elección.
 #' @export
 #'
@@ -234,7 +234,7 @@ graficar_cloropeta <- function(bd, shp, colores_nombrados, eleccion, grupo){
                  names_sep = "_"
     )
   valor_referencia <- max(bd$votos, na.rm = T)
-  bd <- aelectoral::degradar_color_partido(bd, nombre=partido, variable = votos, colores_nombrados = colores_nombrados,valor_maximo = valor_referencia)
+  bd <- degradar_color_partido(bd, nombre=partido, variable = votos, colores_nombrados = colores_nombrados,valor_maximo = valor_referencia)
   res <- bd %>%
     split(list(.$partido,.$eleccion, .$año)) %>%
     map(~{
