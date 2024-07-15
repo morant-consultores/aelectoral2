@@ -202,3 +202,136 @@ aux |>
 dl_21 <- aux
 glimpse(dl_21)
 write_rds(dl_21, "inst/electoral/cdmx/dl_21.rda")
+
+# PM-15 -------------------------------------------------------------------
+
+path <- "~/Google Drive/Unidades compartidas/3_Insumos/Externas/Limpieza/PEL/CDMX/2015/JEFE_DELEGACIONAL_csv/2015_SEE_JEF_DELEG_DF_CAS.csv"
+
+pm_15 <- readr::read_csv(path) |>
+  janitor::clean_names() |>
+  rename_with(~gsub("cand_", "", .x)) |>
+  rename_with(~gsub("nva_alianza", "panal", .x)) |>
+  rename_with(~gsub("num_votos_", "", .x)) |>
+  rename(noreg = can_nreg,
+         total = total_votos,
+         nominal = lista_nominal,
+         estado = id_estado) |>
+  mutate(nombre_estado = "CIUDAD DE MÉXICO",
+         estado = sprintf("%02s", estado),
+         seccion = sprintf("%04s", seccion)) |>
+  rename_with(~paste("ele", .x, "pm_15", sep = "_"), .cols = c(pan:nominal)) |>
+  rename_with(~gsub("_es_", "_pes_", .x), contains("_es_")) |>
+  homologar_bd(estado = "09", nombre_estado = "CIUDAD DE MÉXICO") |>
+  relocate(clave_casilla, .before = seccion)
+
+pm_15 |>
+  count(nchar(clave_casilla))
+
+readr::write_rds(pm_15, "inst/electoral/cdmx/pm_15.rda")
+
+# Resultados 2024 ---------------------------------------------------------
+## Jefatura de gobierno
+path <- "~/Google Drive/Unidades compartidas/Morant Consultores/Insumos/INE/computos/CDMX/JG/2024_SEE_GOB_CDMX_CAS.csv"
+
+aux <- read_csv(path) |>
+  janitor::clean_names() |>
+  rename_with(~gsub("num_votos_", "", .x), contains("num_votos_")) |>
+  rename(
+    nombre_distritol_24 = cabecera_distrital_local,
+    distritol_24 = id_distrito_local,
+    municipio_24 = id_municipio,
+    nombre_municipio_24 = municipio,
+    total = total_votos,
+    nominal = lista_nominal,
+    noreg = can_nreg,
+  ) |>
+  rename(casilla = acta_casilla_mec) |>
+  homologar_bd(estado = "09", nombre_estado = "CIUDAD DE MÉXICO")  |>
+  mutate(distritol_24 = sprintf("%02s", distritol_24),
+         municipio_24 = sprintf("%03s", municipio_24),
+         seccion = sprintf("%04s", seccion),
+         estado = "09"
+  ) %>%
+  rename_with(~paste0("ele_", .x, "_gb_24"), .cols = pan:nominal) |>
+  mutate_all(~tidyr::replace_na(., 0)) |>
+  select(-id_estado)
+
+glimpse(aux)
+
+aux |>
+  count(nchar(clave_casilla))
+
+gb_24 <- aux
+write_rds(gb_24, "inst/electoral/cdmx/gb_24.rda")
+
+# pm_24 -------------------------------------------------------------------
+path <- "~/Google Drive/Unidades compartidas/Morant Consultores/Insumos/INE/computos/CDMX/ALC/2024_SEE_AYUN_CDMX_CAS.csv"
+
+aux <- read_csv(path) |>
+  janitor::clean_names() |>
+  rename_with(~gsub("num_votos_", "", .x), contains("num_votos_")) |>
+  rename_with(~gsub("cand_", "", .x), contains("cand_")) |>
+  rename(
+    nombre_distritol_24 = cabecera_distrital_local,
+    distritol_24 = id_distrito_local,
+    municipio_24 = id_municipio,
+    nombre_municipio_24 = municipio,
+    total = total_votos,
+    nominal = lista_nominal,
+    noreg = can_nreg,
+  ) |>
+  rename(casilla = acta_casilla_mec) |>
+  homologar_bd(estado = "09", nombre_estado = "CIUDAD DE MÉXICO")  |>
+  mutate(distritol_24 = sprintf("%02s", distritol_24),
+         municipio_24 = sprintf("%03s", municipio_24),
+         seccion = sprintf("%04s", seccion),
+         estado = "09"
+  ) %>%
+  rename_with(~paste0("ele_", .x, "_pm_24"), .cols = pan:nominal) |>
+  mutate_all(~tidyr::replace_na(., 0)) |>
+  select(-id_estado)
+
+glimpse(aux)
+
+aux |>
+  count(nchar(clave_casilla))
+
+pm_24 <- aux
+write_rds(pm_24, "inst/electoral/cdmx/pm_24.rda")
+
+# DL_24 -------------------------------------------------------------------
+path <- "~/Google Drive/Unidades compartidas/Morant Consultores/Insumos/INE/computos/CDMX/DIP MR/2024_SEE_DIP_LOC_MR_CDMX_CAS.csv"
+
+aux <- read_csv(path) |>
+  janitor::clean_names() |>
+  rename_with(~gsub("num_votos_", "", .x), contains("num_votos_")) |>
+  rename_with(~gsub("cand_", "", .x), contains("cand_")) |>
+  rename(
+    nombre_distritol_24 = cabecera_distrital_local,
+    distritol_24 = id_distrito_local,
+    municipio_24 = id_municipio,
+    nombre_municipio_24 = municipio,
+    total = total_votos,
+    nominal = lista_nominal,
+    noreg = can_nreg,
+  ) |>
+  rename(casilla = acta_casilla_mec) |>
+  homologar_bd(estado = "09", nombre_estado = "CIUDAD DE MÉXICO")  |>
+  mutate(distritol_24 = sprintf("%02s", distritol_24),
+         municipio_24 = sprintf("%03s", municipio_24),
+         seccion = sprintf("%04s", seccion),
+         estado = "09"
+  ) %>%
+  rename_with(~paste0("ele_", .x, "_dl_24"), .cols = pan:nominal) |>
+  mutate_all(~tidyr::replace_na(., 0)) |>
+  select(-id_estado)
+
+glimpse(aux)
+
+aux |>
+  count(nchar(clave_casilla))
+
+dl_24 <- aux
+write_rds(dl_24, "inst/electoral/cdmx/dl_24.rda")
+
+
