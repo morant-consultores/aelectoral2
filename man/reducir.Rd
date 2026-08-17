@@ -2,8 +2,7 @@
 % Please edit documentation in R/lectura.R
 \name{reducir}
 \alias{reducir}
-\title{Base de datos que resume agrupando por las llaves
-Basada en la función summarise}
+\title{Base de datos que resume agrupando por las llaves}
 \usage{
 reducir(bd, completa, llaves)
 }
@@ -19,8 +18,4 @@ Data frame
 }
 \description{
 Base de datos que resume agrupando por las llaves
-Basada en la función summarise
-}
-\examples{
-add \%>\% reducir(self$bd, self$llaves)
 }

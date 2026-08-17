@@ -1,30 +1,94 @@
-
-#' Función para leer una base de datos
+#' Función para leer una base de datos electoral
 #' Basada en la funcion read_rds del paquete readr
 #'
 #' @param eleccion Es el tipo de elección y su año separado por "_". Opciones posibles para 2021: pm_21, dl_21, df_21.
 #' @param entidad Cuando es nacional es "nac", cuando es local se pone la abreviatura oficial, por ejemplo "chis", "dgo", "mex".
 #' @param tipo_eleccion Por default es "MR" refiriéndose a mayoría relativa.
+#' @param cc Lógico. Si es `TRUE`, incluye las candidaturas comunes en la lectura.
 #'
 #' @return tibble de la base electoral
-#' @examples leer_base(eleccion = eleccion,entidad = entidad, tipo_eleccion = self$tipo_eleccion)
-leer_base <- function(eleccion, entidad, tipo_eleccion){
-  estado <- if_else(grepl("df_|pr_|cp_",eleccion), "nacional",entidad)
-  res <- readr::read_rds(system.file(glue::glue("electoral/{estado}/{eleccion}.rda"),
-                                     package = "aelectoral2",
-                                     mustWork = TRUE)) %>% tibble::as_tibble()
-  if(estado == "nacional") {
-    if(entidad != "nacional"){
-      nombre <- aelectoral2::diccionario %>% filter(abreviatura == !!entidad) %>% pull(id_estado) %>% stringr::str_pad(width = 2, pad = "0")
-      res <- res %>% filter(estado == !!nombre)
-    }}
+leer_base <- function(eleccion, entidad, tipo_eleccion, cc) {
+  estado <- if_else(grepl("df_|pr_|cp_|sen_", eleccion), "nacional", entidad)
+  file_path <- system.file(
+    glue::glue("electoral/{estado}/{eleccion}.rda"),
+    package = "aelectoral2"
+  )
 
-  if("mr_rp" %in% names(res)) res <- filter(res, mr_rp == !!tipo_eleccion)
+  # Remote fetch if not found in package inst/
+  if (file_path == "") {
+    filename <- paste0(eleccion, ".rda")
+    file_path <- fetch_remote_data(filename, entidad = estado, subfolder = "electoral")
+  }
+
+  if (file_path == "" || !file.exists(file_path)) {
+    stop(glue::glue("Electoral data file not found: electoral/{estado}/{eleccion}.rda"))
+  }
+
+  res <- tryCatch({
+    readr::read_rds(file_path)
+  }, error = function(e) {
+    stop(glue::glue("Error reading electoral data: {e$message}"))
+  }) %>%
+    tibble::as_tibble()
+    
+  if (estado == "nacional") {
+    if (entidad != "nacional") {
+      nombre <- aelectoral2::diccionario %>%
+        filter(abreviatura == !!entidad) %>%
+        pull(id_estado) %>%
+        stringr::str_pad(width = 2, pad = "0")
+      
+      if (length(nombre) == 0) {
+        stop(glue::glue("Entity abbreviation '{entidad}' not found in dictionary."))
+      }
+      
+      res <- res %>% filter(estado == !!nombre)
+    }
+  }
+
+  if ("mr_rp" %in% names(res)) {
+    res <- filter(res, mr_rp == !!tipo_eleccion)
+  }
 
   return(res)
 }
 
+#' Función para leer censo Basada en la funcion read_rds del paquete readr
+#'
+#' @param ano Es el año del censo
+#' @param entidad Cuando se requiere la información de todo el país se escribe "nacional", cuando es local se pone la abreviatura oficial de la entidad, por ejemplo "chis", "dgo", "mex".
+#' @param nivel Unidad geográfica en la que se requiere la información del censo
+#' @return tibble de la base del censo
+leer_censo <- function(ano, entidad, nivel) {
+  file_path <- system.file(
+    glue::glue("censo/{nivel}_{ano}.rda"),
+    package = "aelectoral2"
+  )
 
+  # Remote fetch if not found in package inst/
+  if (file_path == "") {
+    filename <- glue::glue("{nivel}_{ano}.rda")
+    file_path <- fetch_remote_data(filename, entidad = "nacional", subfolder = "censo")
+  }
+
+  if (file_path == "" || !file.exists(file_path)) {
+    stop(glue::glue("Census data file not found: censo/{nivel}_{ano}.rda"))
+  }
+
+  res <- readr::read_rds(file_path) %>%
+    tibble::as_tibble()
+
+  if (entidad != "nacional") {
+    nombre <- aelectoral2::diccionario %>%
+      filter(abreviatura == !!entidad) %>%
+      pull(id_estado) %>%
+      stringr::str_pad(width = 2, pad = "0")
+
+    res <- res %>% filter(entidad == !!nombre)
+  }
+
+  return(res)
+}
 
 #' Función para leer la base de datos de alianzas por partido y por nivel
 #' También transforma la bd de alianzas al nivel de la base electoral.
@@ -35,77 +99,112 @@ leer_base <- function(eleccion, entidad, tipo_eleccion){
 #' @param bd_e Base de datos electoral a la ue se le van a pegar las coaliciones por partido.
 #'
 #' @return Regresa un data frame de alianzas
-#' @examples leer_alianza(nivel, eleccion, self$entidad, self$bd)
 
-leer_alianza <- function(nivel, eleccion, entidad, bd_e){
-  estado <- if_else(grepl("df_|pr_",eleccion), "nacional",entidad)
+leer_alianza <- function(nivel, eleccion, entidad, bd_e) {
+  estado <- if_else(grepl("df_|pr_", eleccion), "nacional", entidad)
 
-  if(estado == "nacional") {
-    res <- readr::read_rds(system.file(glue::glue("alianzas/{estado}/{eleccion}.rda"),
-                                       package = "aelectoral2",
-                                       mustWork = TRUE)) %>% tibble::as_tibble()
-
-    if(entidad != "nacional"){
-      nombre <- aelectoral2::diccionario %>% filter(abreviatura == !!entidad) %>% pull(id_estado) %>%
-        stringr::str_pad(width = 2, pad = "0")
-      res <- res %>% filter(estado == !!nombre)
-    }} else{
-      res <- readr::read_rds(system.file(glue::glue("alianzas/{estado}/{eleccion}.rda"),
-                                         package = "aelectoral2",
-                                         mustWork = TRUE)) %>% tibble::as_tibble()
-    }
-
-  res <- res %>% select(-any_of(c("eleccion", "nombre_estado", "candidatura_comun")))
-
-  nivel_sep <- stringr::str_split(names(res)[2], pattern = "_") %>% pluck(1,1)
-
-  w <- switch(nivel_sep, municipio = 3, distritof = 2, distritol = 2, estado = 2)
-
-  alianzas <- res %>% transmute(
-    !!rlang::sym(names(res)[2]) := paste(stringr::str_pad(estado, width = 2, pad = "0"),
-                                 stringr::str_pad(!!rlang::sym(names(res)[2]), width = w, pad = "0"),
-                                 sep = "_"),
-    coalicion = coaliciones
+  file_path <- system.file(
+    glue::glue("alianzas/{estado}/{eleccion}.rda"),
+    package = "aelectoral2"
   )
 
-  if(!nivel %in% names(alianzas)) {
-
-    alianzas <- alianzas %>% left_join(bd_e %>% distinct(!!rlang::sym(names(alianzas)[1]), !!rlang::sym(nivel)))
+  # Remote fetch if not found in package inst/
+  if (file_path == "") {
+    filename <- paste0(eleccion, ".rda")
+    file_path <- fetch_remote_data(filename, entidad = estado, subfolder = "alianzas")
   }
 
+  if (file_path == "" || !file.exists(file_path)) {
+    stop(glue::glue("Alliance data file not found: alianzas/{estado}/{eleccion}.rda"))
+  }
+
+  res <- readr::read_rds(file_path) %>%
+    tibble::as_tibble()
+
+  res <- res |>
+    select(-any_of(c("eleccion", "nombre_estado", "candidatura_comun")))
+
+  nivel_sep <- stringr::str_split(names(res)[2], pattern = "_") |>
+    pluck(1, 1)
+
+  w <- switch(
+    nivel_sep,
+    municipio = 3,
+    distritof = 2,
+    distritol = 2,
+    estado = 2
+  )
+
+  alianzas <- res %>%
+    transmute(
+      !!rlang::sym(names(res)[2]) := paste(
+        stringr::str_pad(estado, width = 2, pad = "0"),
+        stringr::str_pad(!!rlang::sym(names(res)[2]), width = w, pad = "0"),
+        sep = "_"
+      ),
+      coalicion = coaliciones
+    )
+
+  if (!nivel %in% names(alianzas)) {
+    alianzas <- alianzas %>%
+      left_join(
+        bd_e %>%
+          distinct(
+            !!names(alianzas)[1] := .data[[glue::glue(
+              "{names(alianzas)[1]}_{readr::parse_number(eleccion)}"
+            )]],
+            !!rlang::sym(nivel)
+          )
+      )
+  }
 
   return(alianzas)
 }
 #' Base de datos que resume agrupando por las llaves
-#'Basada en la función summarise
 #'
 #' @param bd Base de datos que se quiere reducir
 #' @param completa base de datos electoral
 #' @param llaves Son las claves cartográficas de los niveles. Por default la unidad mínima es sección y está acompañada de estado.
 #'
 #' @return Data frame
-#' @examples add %>% reducir(self$bd, self$llaves)
-reducir <- function(bd, completa, llaves){
-
+reducir <- function(bd, completa, llaves) {
   llaves_bd <- NULL
 
-  for( i in seq_along(llaves)){
+  for (i in seq_along(llaves)) {
     agregar <- names(bd)[grepl(llaves[i], names(bd))]
 
-    if(!is.null(completa)){
-      if(all(is.na(match(agregar, names(completa))))) llaves_bd <- llaves_bd %>% append(agregar)
-    } else{
+    if (!is.null(completa)) {
+      if (all(is.na(match(agregar, names(completa))))) {
+        llaves_bd <- llaves_bd %>% append(agregar)
+      }
+    } else {
       llaves_bd <- llaves_bd %>% append(agregar)
     }
-
   }
-  if(! "estado" %in% llaves_bd) llaves_bd <- llaves_bd %>% append("estado")
-  if(! "seccion" %in% llaves_bd) llaves_bd <- llaves_bd %>% append("seccion")
+  if (!"estado" %in% llaves_bd) {
+    llaves_bd <- llaves_bd %>% append("estado")
+  }
+  if (!"seccion" %in% llaves_bd) {
+    llaves_bd <- llaves_bd %>% append("seccion")
+  }
 
-  bd %>% group_by(across(all_of(llaves_bd))) %>%
-    summarise(across(c(starts_with("ele_"), starts_with("cp_")), ~sum(.x,na.rm = T))) %>% ungroup %>%
+  bd %>%
+    group_by(across(all_of(llaves_bd))) %>%
+    summarise(across(
+      c(starts_with("ele_"), starts_with("cp_")),
+      ~ sum(.x, na.rm = T)
+    )) %>%
+    ungroup %>%
     # pegar estado a las llaves que no contenga la palabra nombre
-    mutate(across(all_of(grep(pattern = "nombre_", invert = T, value = T, llaves_bd[is.na(match(llaves_bd, "estado"))])), ~paste(estado,.x,sep = "_")))
+    mutate(across(
+      all_of(grep(
+        pattern = "nombre_",
+        invert = T,
+        value = T,
+        llaves_bd[is.na(match(llaves_bd, "estado"))]
+      )),
+      ~ paste(estado, .x, sep = "_")
+    ))
 }
 
 #' Lee un shapefile
@@ -113,26 +212,82 @@ reducir <- function(bd, completa, llaves){
 #' @param entidad el estado de donde es
 #'
 #' @return shp
-#' @examples leer_shp(unidad, entidad)
-leer_shp <- function(unidad, entidad){
-  if(entidad == "nacional") id <- aelectoral2::diccionario %>% pull(id_estado) %>% stringr::str_pad(width = 2, pad = "0") else{
-    id <- aelectoral2::diccionario %>% filter(abreviatura %in% !!entidad) %>% pull(id_estado) %>% stringr::str_pad(width = 2, pad = "0")
+#' @export
+leer_shp <- function(unidad, entidad) {
+  if (entidad == "nacional") {
+    id <- aelectoral2::diccionario %>%
+      pull(id_estado) %>%
+      stringr::str_pad(width = 2, pad = "0")
+  } else {
+    id <- aelectoral2::diccionario %>%
+      filter(abreviatura %in% !!entidad) %>%
+      pull(id_estado) %>%
+      stringr::str_pad(width = 2, pad = "0")
+  }
+  
+  if (length(id) == 0) {
+    stop(glue::glue("Entity '{entidad}' not found or no IDs available."))
   }
 
-  res <- id %>% purrr::map(~{
-    readr::read_rds(system.file(glue::glue("shp/{unidad}/{.x}.rda"),
-                                package = "aelectoral2",
-                                mustWork = TRUE)) %>% sf::st_transform(sf::st_crs(4326))
-  }) %>% bind_rows()
+  res <- id %>%
+    purrr::map(
+      ~ {
+        file_path <- system.file(
+          glue::glue("shp/{unidad}/{.x}.rda"),
+          package = "aelectoral2"
+        )
+        
+        # Remote fetch if not found in package inst/
+        if (file_path == "") {
+          filename <- paste0(.x, ".rda")
+          file_path <- fetch_remote_data(filename, entidad = .x, subfolder = glue::glue("shp/{unidad}"))
+        }
+
+        if (file_path == "" || !file.exists(file_path)) {
+          warning(glue::glue("Shapefile not found for entity ID {.x} at level '{unidad}'."))
+          return(NULL)
+        }
+        
+        tryCatch({
+          readr::read_rds(file_path) %>%
+            sf::st_transform(sf::st_crs(4326))
+        }, error = function(e) {
+          warning(glue::glue("Error reading shapefile for entity ID {.x}: {e$message}"))
+          return(NULL)
+        })
+      }
+    ) %>%
+    purrr::compact() %>%
+    bind_rows()
+    
+  if (nrow(res) == 0) {
+    stop(glue::glue("No shapefile data loaded for unit '{unidad}' and entity '{entidad}'."))
+  }
+  
+  return(res)
 }
 
 #' Para juntar un shapefile con otra base de datos
 #' Funcion basada en left_join
 #' @param shp Base de datos de tipo shp
 #' @param bd Base de datos que se va a unir con el shapefile
-#'
+#' @export
 #' @return Un shp unido con bd
-#' @examples join_shp_bd(secc_21, df_21)
-join_shp_bd <- function(shp, bd){
+join_shp_bd <- function(shp, bd) {
   shp %>% left_join(bd)
+}
+
+#' Para incluir las candidaturas comunes en el análisis
+#'
+#' @param bd Base de datos electoral sobre la que se detectan las candidaturas comunes.
+#' @param eleccion Es el tipo de elección y su año separado por "_" (e.g. `"pm_21"`).
+#' @export
+#' @return el vector de self$partido con las candidaturas comunes
+anadir_cc <- function(bd, eleccion) {
+  cc <- gsub(
+    glue::glue("ele_|_{eleccion}"),
+    "",
+    subset(names(bd), grepl("_cc", names(bd)))
+  )
+  return(cc)
 }

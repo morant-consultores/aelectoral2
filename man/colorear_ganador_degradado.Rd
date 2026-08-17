@@ -2,13 +2,14 @@
 % Please edit documentation in R/auxiliar_colores.R
 \name{colorear_ganador_degradado}
 \alias{colorear_ganador_degradado}
-\title{Title}
+\title{Obtener degradado de variable seleccionada}
 \usage{
 colorear_ganador_degradado(
   bd,
   eleccion,
   colores_nombrados,
   grupo,
+  tipo,
   saturacion = 0.9
 )
 }
@@ -21,11 +22,14 @@ colorear_ganador_degradado(
 
 \item{grupo}{nivel de observación de la gráfica (secciones, municipios, distritos)}
 
+\item{tipo}{tipo de resultado a colorear: `"relativo"` usa porcentajes (`pct_`),
+cualquier otro valor usa votos absolutos (`ele_`).}
+
 \item{saturacion}{nivel de saturación de la paleta de color}
 }
 \value{
-
+base con columnas adicionales
 }
 \description{
-Title
+Obtener degradado de variable seleccionada
 }

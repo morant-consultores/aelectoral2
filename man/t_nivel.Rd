@@ -25,6 +25,3 @@ Resultado electoral por nivel
 \description{
 Devuelve el resultado electoral por partido o por candidato de una variable seleccionada con un patron de un estado en particular en un nivel seleccionado
 }
-\examples{
-mex$bd \%>\%  t_nivel("candidato", "ele_morena_dl_21", estado = 15, nivel = "estado",  seleccion = "15")
-}

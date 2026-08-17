@@ -2,16 +2,13 @@
 % Please edit documentation in R/analisis_censos.R
 \name{relativizar_censo}
 \alias{relativizar_censo}
-\title{Title}
+\title{Relativiza el censo}
 \usage{
 relativizar_censo(bd)
 }
 \arguments{
-\item{bd}{base de datos electoral}
-}
-\value{
-
+\item{bd}{Base de datos del censo a relativizar.}
 }
 \description{
-Title
+Función de poca utilidad, se valorará su remoción
 }

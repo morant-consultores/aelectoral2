@@ -2,7 +2,7 @@
 % Please edit documentation in R/preparar_base_electoral.R
 \name{insertar_sufijo}
 \alias{insertar_sufijo}
-\title{Title}
+\title{Inserta los sufijos a los datos}
 \usage{
 insertar_sufijo(bd, eleccion_nivel, eleccion_year)
 }
@@ -14,8 +14,8 @@ insertar_sufijo(bd, eleccion_nivel, eleccion_year)
 \item{eleccion_year}{año de la eleción de interés (15,18,21)}
 }
 \value{
-
+base de datos
 }
 \description{
-Title
+Inserta los sufijos a los datos
 }

@@ -15,6 +15,3 @@ Data frame sin las secciones iguales a 0000
 \description{
 Se eliminan los votos que están en las secciones = 0000
 }
-\examples{
-bd \%>\%  eliminar_votoExtranjero()
-}

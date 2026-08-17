@@ -19,6 +19,3 @@ Un shp unido con bd
 Para juntar un shapefile con otra base de datos
 Funcion basada en left_join
 }
-\examples{
-join_shp_bd(secc_21, df_21)
-}

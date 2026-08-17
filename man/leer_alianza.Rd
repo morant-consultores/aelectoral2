@@ -23,6 +23,3 @@ Regresa un data frame de alianzas
 Función para leer la base de datos de alianzas por partido y por nivel
 También transforma la bd de alianzas al nivel de la base electoral.
 }
-\examples{
-leer_alianza(nivel, eleccion, self$entidad, self$bd)
-}

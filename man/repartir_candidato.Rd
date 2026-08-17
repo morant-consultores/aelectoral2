@@ -21,6 +21,3 @@ Base de datos repartida por candidato
 \description{
 Reparte los votos por candidato tomando en cuenta si los candidatos fueron con alianzas o en candidatura común con más de un partido o no.
 }
-\examples{
-repartir_candidato(bd = self$bd_partido[[eleccion]], alianzas, nivel, eleccion)
-}

@@ -2,8 +2,7 @@
 % Please edit documentation in R/analisis_explorar.R
 \name{graficar_totales_eleccion}
 \alias{graficar_totales_eleccion}
-\title{Title
-Gráfica de líneas con el total de votos comparándolos entre elecciones.}
+\title{Gráfica de líneas con el total de votos comparándolos entre elecciones.}
 \usage{
 graficar_totales_eleccion(bd, colores_nombrados, eleccion, grupo = NULL)
 }
@@ -20,6 +19,5 @@ graficar_totales_eleccion(bd, colores_nombrados, eleccion, grupo = NULL)
 Grafica de líneas con los totales de las elecciones solicitadas
 }
 \description{
-Title
 Gráfica de líneas con el total de votos comparándolos entre elecciones.
 }

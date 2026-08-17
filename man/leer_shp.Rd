@@ -17,6 +17,3 @@ shp
 \description{
 Lee un shapefile
 }
-\examples{
-leer_shp(unidad, entidad)
-}

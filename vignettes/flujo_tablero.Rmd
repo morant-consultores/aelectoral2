@@ -1,0 +1,84 @@
+---
+title: "flujo_tablero"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{flujo_tablero}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  # This vignette documents a workflow that requires remote electoral data
+  # (Google Drive). Chunks are shown but not evaluated so the package builds
+  # without credentials/data. Run them interactively after `drive_auth()`.
+  eval = FALSE
+)
+```
+
+## Creación de clase Electoral con los objetos requeridos
+```{r}
+library(aelectoral2)
+
+elecciones <- c("gb_18", "pm_18", "dl_18", "df_18", "dl_21", "df_21")
+partidos <- c("morena", "pan", "pri", "mc", "prd", "pvem", "pt", "total")
+
+bd <- Electoral$new("pm_21", entidad = "jal", partidos = partidos, extranjero = F, especiales = F)
+bd$partido("pm_21")
+bd$voto_relativo("bd_partido", "pm_21")
+bd$calcular_ganador("bd_partido", "pm_21")
+bd$obtener_degradado_ganador(base = "bd_partido", eleccion = "pm_21")
+
+purrr::walk(elecciones, ~{
+  bd$agregar_bd(.x)
+  bd$partido(.x)
+  bd$voto_relativo("bd_partido", .x)
+  bd$calcular_ganador("bd_partido", .x)
+  bd$obtener_degradado_ganador(base = "bd_partido", eleccion = .x)
+})
+
+shp <- ElectoralSHP$new(unidad = "secc_22", entidad = "jal")
+shp$agregar_shp(unidad = "mun_22", entidad = "jal")
+shp$agregar_shp(unidad = "dl_22", entidad = "jal")
+shp$agregar_shp(unidad = "df_22", entidad = "jal")
+
+bd$colapsar_base("bd_partido", filtro = shp$shp$secc_22_jal |>
+                   select(seccion))
+
+bd$obtener_indice_completo("bd_partido")
+bd$calcular_irs(ano = "2020", base = "bd_partido")
+
+bd$anadir_leyenda("bd_partido")
+
+bd$fusionar_shp(shp = shp$shp$secc_22_jal, base = "bd_partido")
+
+# Creación de clase tablero -----------------------------------------------
+tablero <- Tablero$new(info_seccion = bd)
+
+tablero$agregar_eleccion(elecciones = c("pm_21", elecciones),
+                         nivel = "municipio_22",
+                         bd_relacion = shp$shp$secc_22_jal |>
+                           as_tibble() |>
+                           select(seccion, municipio_22),
+                         shp = shp$shp$mun_22_jal)
+
+tablero$agregar_eleccion(elecciones = c("pm_21", elecciones),
+                         nivel = "distritol_22",
+                         bd_relacion = shp$shp$secc_22_jal |>
+                           as_tibble() |>
+                           select(seccion, distritol_22),
+                         shp = shp$shp$dl_22_jal)
+
+tablero$agregar_eleccion(elecciones = c("pm_21", elecciones),
+                         nivel = "distritof_22",
+                         bd_relacion = shp$shp$secc_22_jal |>
+                           as_tibble() |>
+                           select(seccion, distritof_22),
+                         shp = shp$shp$df_22_jal)
+
+tablero$obtener_nombres_elecciones()
+
+tablero$cambiar_nombre_participacion()
+```

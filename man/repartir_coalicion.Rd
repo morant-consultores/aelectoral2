@@ -19,7 +19,3 @@ Base de datos repartida
 \description{
 Para repartir votos por coalición
 }
-\examples{
-elf$bd \%>\% repartir_coalicion(nivel = nivel, eleccion = eleccion)
-
-}

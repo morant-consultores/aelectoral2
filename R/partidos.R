@@ -5,36 +5,52 @@
 #' @param eleccion Es el tipo de elección y su año separado por "_". Opciones posibles para 2021: pm_21, dl_21, df_21.
 #'
 #' @return Base de datos repartida
-#' @examples elf$bd %>% repartir_coalicion(nivel = nivel, eleccion = eleccion)
-#'
-repartir_coalicion <- function(bd, nivel, eleccion){
-  if(sum(is.na(bd[[nivel]]))>0) bd <- bd %>% mutate(!!rlang::sym(nivel) := tidyr::replace_na(!!rlang::sym(nivel),"E"))
+#' @export
+repartir_coalicion <- function(bd, nivel, eleccion) {
+  if (sum(is.na(bd[[nivel]])) > 0) {
+    bd <- bd %>%
+      mutate(!!rlang::sym(nivel) := tidyr::replace_na(!!rlang::sym(nivel), "E"))
+  }
 
-  pre <- bd %>% group_by(across(all_of(nivel))) %>%
-    summarise(across(starts_with("ele_"), ~sum(.x,na.rm = T))) %>%
+  ## Obtiene el número de partidos que forman parte de una alianza y divide el número de votos de la alianza entre los partidos
+  pre <- bd %>%
+    group_by(across(all_of(nivel))) %>%
+    summarise(across(starts_with("ele_"), ~ sum(.x, na.rm = T))) %>%
     filter(!is.na(!!rlang::sym(nivel))) %>%
     select(all_of(nivel), contains(eleccion)) %>%
-    tidyr::pivot_longer(-nivel) %>% mutate(
-      alianza = gsub(pattern = glue::glue("ele_|_{eleccion}|_cc"),"",name),
+    tidyr::pivot_longer(-all_of(nivel)) %>%
+    mutate(
+      alianza = gsub(pattern = glue::glue("ele_|_{eleccion}|_cc"), "", name),
       partidos = stringr::str_split(alianza, "_"),
-      num_partidos = purrr::map_int(partidos,~length(.x)),
+      num_partidos = purrr::map_int(partidos, ~ length(.x)),
       partido = value %/% num_partidos,
       residuo = value %% num_partidos
     )
 
-  r <- pre %>% filter(num_partidos == 1) %>% group_by(across(all_of(nivel))) %>%
-    mutate(rango = dense_rank(-partido)) %>% ungroup
+  ## Asigna un ranking a cada partido dependiendo quién obtuvo más votos por sección
+  r <- pre %>%
+    filter(num_partidos == 1) %>%
+    group_by(across(all_of(nivel))) %>%
+    mutate(rango = dense_rank(-partido)) %>%
+    ungroup()
 
-  total <- pre %>% tidyr::unnest(partidos) %>%
-    left_join(r %>% select(all_of(nivel), alianza, rango),
-              by = c(nivel, "partidos" = "alianza")) %>%
+  total <- pre %>%
+    tidyr::unnest(partidos) %>%
+    left_join(
+      r %>% select(all_of(nivel), alianza, rango),
+      by = c(nivel, "partidos" = "alianza")
+    ) %>%
     group_by(across(all_of(nivel)), alianza) %>%
-    mutate(partido = partido + (residuo >= dense_rank(rango)) * (residuo > 0)) %>%
+    mutate(
+      partido = partido + (residuo >= dense_rank(rango)) * (residuo > 0)
+    ) %>%
     group_by(across(all_of(nivel)), partidos, .drop = T) %>%
     summarise(partido = sum(partido, na.rm = T)) %>%
     tidyr::pivot_wider(names_from = partidos, values_from = partido)
 
-  total <- total %>% rename_with(.cols = -all_of(nivel),~glue::glue("ele_{.x}_{eleccion}")) %>% ungroup
+  total <- total %>%
+    rename_with(.cols = -all_of(nivel), ~ glue::glue("ele_{.x}_{eleccion}")) %>%
+    ungroup()
 
   return(total)
 }
@@ -45,39 +61,59 @@ repartir_coalicion <- function(bd, nivel, eleccion){
 #' @param al alianzas
 #' @param nivel Nivel en el que se determinan las alianzas dependiendo de la unidad en la que se realiza la elección.
 #' @param eleccion Es el tipo de elección y su año separado por "_". Opciones posibles para 2021: pm_21, dl_21, df_21.
-#'
+#' @export
 #' @return Base de datos repartida por candidato
-#' @examples repartir_candidato(bd = self$bd_partido[[eleccion]], alianzas, nivel, eleccion)
-repartir_candidato <- function(bd, al, nivel, eleccion){
+repartir_candidato <- function(bd, al, nivel, eleccion) {
   al <- al %>% na.omit
   partidos_alianza <- al %>% distinct(coalicion) %>% pull(coalicion)
 
-  res <-  partidos_alianza %>%
-    purrr::map(~{
-      aux_n <- al %>% filter(coalicion == .x) %>% pull(nivel)
-      partidos <- stringr::str_split(.x,"_") %>% purrr::pluck(1)
-      p_vars <- paste("ele", partidos, eleccion, sep = "_")
+  res <- partidos_alianza %>%
+    purrr::map(
+      ~ {
+        aux_n <- al %>% filter(coalicion == .x) %>% pull(nivel)
+        partidos <- stringr::str_split(.x, "_") %>% purrr::pluck(1)
+        p_vars <- paste("ele", partidos, eleccion, sep = "_")
 
-      candidato_c <- bd %>% filter(!!rlang::sym(nivel) %in% aux_n) %>% rowwise() %>%
-        transmute(!!rlang::sym(nivel),
-                  !!rlang::sym(paste("cand",.x,eleccion, sep = "_")) := sum(c_across(all_of(p_vars)))) %>% ungroup
+        candidato_c <- bd %>%
+          filter(!!rlang::sym(nivel) %in% aux_n) %>%
+          rowwise() %>%
+          transmute(
+            !!rlang::sym(nivel),
+            !!rlang::sym(paste(
+              "cand",
+              .x,
+              eleccion,
+              sep = "_"
+            )) := sum(c_across(all_of(p_vars)))
+          ) %>%
+          ungroup
 
-      sin_c <- bd %>% filter(!(!!rlang::sym(nivel) %in% aux_n)) %>%
-        select(all_of(c(nivel, p_vars)))
+        sin_c <- bd %>%
+          filter(!(!!rlang::sym(nivel) %in% aux_n)) %>%
+          select(all_of(c(nivel, p_vars)))
 
-      res <- candidato_c %>%
-        {
-          if(nrow(sin_c)> 0) full_join(., sin_c) else .
-        }
+        res <- candidato_c %>%
+          {
+            if (nrow(sin_c) > 0) full_join(., sin_c) else .
+          }
+      }
+    ) %>%
+    purrr::reduce(full_join, by = nivel)
 
-    }) %>% purrr::reduce(full_join, by = nivel)
-
-
-  res <- res %>% left_join(
-    bd %>% select(-matches(partidos_alianza %>% stringr::str_split("_") %>% do.call(c,.)))
-  ) %>%
-    rename_with(~stringr::str_replace(.x, "ele_", "cand_"), starts_with("ele_")) %>%
-    mutate(across(c(starts_with("cand_")), ~tidyr::replace_na(.x,0)))# %>%
+  res <- res %>%
+    left_join(
+      bd %>%
+        select(
+          -matches(
+            partidos_alianza %>% stringr::str_split("_") %>% do.call(c, .)
+          )
+        )
+    ) %>%
+    rename_with(
+      ~ stringr::str_replace(.x, "ele_", "cand_"),
+      starts_with("ele_")
+    ) %>%
+    mutate(across(c(starts_with("cand_")), ~ tidyr::replace_na(.x, 0))) # %>%
 
   return(res)
 }
@@ -89,21 +125,27 @@ repartir_candidato <- function(bd, al, nivel, eleccion){
 #' @param eleccion Es el tipo de elección y su año separado por "_". Opciones posibles para 2021: pm_21, dl_21, df_21.
 #'
 #' @return tibble con la columna de ganador con los ganadores por nivel
-#' @examples
-ganador <- function(bd, nivel, eleccion){
-  aux <- bd %>% group_by(across(all_of(nivel))) %>% summarise(across(c(starts_with("ele_"),starts_with("cand_")), ~sum(.x,na.rm = T))) %>%
+ganador <- function(bd, nivel, eleccion) {
+  aux <- bd %>%
+    group_by(across(all_of(nivel))) %>%
+    summarise(across(
+      c(starts_with("ele_"), starts_with("cand_")),
+      ~ sum(.x, na.rm = T)
+    )) %>%
     filter(!is.na(!!rlang::sym(nivel)))
 
   g <- aux %>%
-    select(-contains("total"),-contains("nominal")) %>%
+    select(-contains("total"), -contains("nominal")) %>%
     select(contains(eleccion)) %>%
     rowwise() %>%
-    transmute(!!rlang::sym(glue::glue("ganador_{eleccion}")) := names(.)[which.max(na.omit(c_across(everything())))]) %>%
+    transmute(
+      !!rlang::sym(glue::glue("ganador_{eleccion}")) := names(
+        .
+      )[which.max(na.omit(c_across(everything())))]
+    ) %>%
     ungroup
 
   aux <- aux %>%
     bind_cols(g)
   return(aux)
-
 }
-

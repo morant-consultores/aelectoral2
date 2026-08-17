@@ -15,6 +15,3 @@ Data frame sin casillas especiales (tipo_casilla = "S")
 \description{
 Elimina las casillas especiales (tipo_casilla = "S")
 }
-\examples{
- eliminar_especiales(bd)
-}

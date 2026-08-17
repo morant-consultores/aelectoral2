@@ -2,10 +2,7 @@
 % Please edit documentation in R/analisis_explorar.R
 \name{graficar_cloropeta}
 \alias{graficar_cloropeta}
-\title{Title
-grafica una cloropeta con la distribución del apoyo del partido solicitado.
-una vez coloreada la sección se hace un degradado en función de la intensidad con la que dicho partido resultó ganador.
-Es decir, se colorea más fuerte mientras mayor haya sido la victoria y menos fuerte si fue una sección muy competida.}
+\title{Grafica una cloropeta con la distribución del apoyo del partido solicitado.}
 \usage{
 graficar_cloropeta(bd, shp, colores_nombrados, eleccion, grupo)
 }
@@ -24,8 +21,6 @@ graficar_cloropeta(bd, shp, colores_nombrados, eleccion, grupo)
 mapa con la intensidad de apoyo por partido
 }
 \description{
-Title
-grafica una cloropeta con la distribución del apoyo del partido solicitado.
-una vez coloreada la sección se hace un degradado en función de la intensidad con la que dicho partido resultó ganador.
+Una vez coloreada la sección se hace un degradado en función de la intensidad con la que dicho partido resultó ganador.
 Es decir, se colorea más fuerte mientras mayor haya sido la victoria y menos fuerte si fue una sección muy competida.
 }

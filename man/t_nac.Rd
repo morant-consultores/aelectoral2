@@ -19,7 +19,3 @@ El resultado electoral con el método señalado
 \description{
 Te trae el resultado de votos de una variable seleccionada con un patron de una bd electoral.
 }
-\examples{
-aux <- mex$bd \%>\% repartir_coalicion(nivel = "distritof_21", eleccion = "df_21")
-t_nac(aux, "partido", "morena_")
-}

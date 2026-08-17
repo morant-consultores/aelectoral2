@@ -2,3 +2,16 @@
 ^renv\.lock$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^data-raw$
+^LICENSE\.md$
+^\.Rhistory$
+^\.RData$
+^\.RDataTmp.*$
+^\.DS_Store$
+^\.git$
+^\.github$
+^GEMINI\.md$
+^CLAUDE\.md$
+^\.claude$
+^dev$
+^\.Rbuildignore$

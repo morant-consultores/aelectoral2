@@ -15,6 +15,3 @@ Data frame con las casillas especiales (tipo_casilla = "S") repartidas
 \description{
 Reparte votos en tipo_casilla = "S"
 }
-\examples{
-repartir_especiales(bd)
-}

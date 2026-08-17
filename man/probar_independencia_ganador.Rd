@@ -2,7 +2,7 @@
 % Please edit documentation in R/analisis_explorar.R
 \name{probar_independencia_ganador}
 \alias{probar_independencia_ganador}
-\title{Title}
+\title{Prueba el grado de indepencia del ganador}
 \usage{
 probar_independencia_ganador(bd, ganador, eleccion, ...)
 }
@@ -16,8 +16,8 @@ probar_independencia_ganador(bd, ganador, eleccion, ...)
 \item{...}{variables del censo de las que se busca analizar la independencia}
 }
 \value{
-
+bd
 }
 \description{
-Title
+Prueba el grado de indepencia del ganador
 }

@@ -2,16 +2,7 @@
 % Please edit documentation in R/preparar_base_electoral.R
 \name{detectar_partidos}
 \alias{detectar_partidos}
-\title{#' Title
-#'
-#' @param bd base de datos de cualquier elección en crudo (sin ningún procesamiento)
-#' @param identificadores nivel de observación para el que se aplica el análisis
-#' @param partido los partidos identificados para cada elección. Calculados con la función detectar partidos
-#'
-#' @return
-#' @export
-#'
-#' @examples}
+\title{Detecta partidos}
 \usage{
 detectar_partidos(bd)
 }
@@ -19,11 +10,8 @@ detectar_partidos(bd)
 \item{bd}{base de datos de cualquier elección en crudo (sin ningún procesamiento)}
 }
 \value{
-
+vector de partidos
 }
 \description{
-
-}
-\details{
-
+Detecta partidos
 }
